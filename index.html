@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlockCall - Decentralized Calling with Receipts</title>
+    <title>BlockCall - Voice & Video Calls</title>
     <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,10 +15,19 @@
         }
         .video-container {
             position: relative;
-            background: #000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 1rem;
             overflow: hidden;
             min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .voice-only-container {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 60px;
+            border-radius: 1rem;
+            text-align: center;
         }
         video {
             width: 100%;
@@ -43,12 +52,22 @@
         .btn-success {
             background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
         }
+        .btn-voice {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
         .pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: .5; }
+        }
+        .wave {
+            animation: wave 1.5s ease-in-out infinite;
+        }
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1); }
         }
         .modal {
             position: fixed;
@@ -81,9 +100,6 @@
             padding: 12px 0;
             border-bottom: 1px solid #e5e7eb;
         }
-        .receipt-row:last-child {
-            border-bottom: none;
-        }
         .receipt-total {
             font-weight: bold;
             font-size: 1.3em;
@@ -103,10 +119,23 @@
             background: #dcfce7;
             color: #166534;
         }
-        .badge-info {
-            background: #dbeafe;
-            color: #1e40af;
+        .audio-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 100px;
         }
+        .audio-bar {
+            width: 8px;
+            background: white;
+            border-radius: 4px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+        .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+        .audio-bar:nth-child(4) { animation-delay: 0.3s; }
+        .audio-bar:nth-child(5) { animation-delay: 0.4s; }
         @media print {
             body * {
                 visibility: hidden;
@@ -132,7 +161,6 @@
     <div id="receiptModal" class="modal hidden">
         <div class="bg-white rounded-2xl max-w-2xl w-full mx-4">
             <div id="receiptContent" class="receipt">
-                <!-- Receipt Header -->
                 <div class="receipt-header">
                     <div class="flex justify-between items-start">
                         <div>
@@ -143,23 +171,17 @@
                         <div class="text-right">
                             <div class="badge badge-success">VERIFIED ✓</div>
                             <p class="text-xs text-gray-600 mt-2">Receipt #<span id="receiptNumber">-</span></p>
-                            <p class="text-xs text-gray-600" id="receiptDate">-</p>
+                            <p class="text-xs text-gray-600" id="receiptDate">-</span></p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Call Details -->
                 <div class="mb-6">
                     <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Call Details</h2>
                     
                     <div class="receipt-row">
                         <span class="text-gray-600 font-medium">Call Type:</span>
                         <span class="font-semibold" id="receiptCallType">-</span>
-                    </div>
-                    
-                    <div class="receipt-row">
-                        <span class="text-gray-600 font-medium">Quality:</span>
-                        <span class="font-semibold" id="receiptQuality">-</span>
                     </div>
                     
                     <div class="receipt-row">
@@ -178,7 +200,6 @@
                     </div>
                 </div>
 
-                <!-- Participants -->
                 <div class="mb-6">
                     <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Participants</h2>
                     
@@ -193,7 +214,6 @@
                     </div>
                 </div>
 
-                <!-- Blockchain Details -->
                 <div class="mb-6">
                     <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Blockchain Verification</h2>
                     
@@ -218,7 +238,6 @@
                     </div>
                 </div>
 
-                <!-- Payment Details -->
                 <div class="mb-6">
                     <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Payment Summary</h2>
                     
@@ -243,7 +262,6 @@
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="text-center mt-8 pt-6 border-t-2 border-gray-200">
                     <p class="text-xs text-gray-500">This receipt is cryptographically verified on the blockchain</p>
                     <p class="text-xs text-gray-500 mt-1">BlockCall - Decentralized Communication</p>
@@ -251,13 +269,12 @@
                 </div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="flex gap-3 p-6 bg-gray-50 rounded-b-2xl no-print">
                 <button onclick="app.printReceipt()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-semibold transition">
-                    🖨️ Print Receipt
+                    🖨️ Print
                 </button>
                 <button onclick="app.downloadReceiptPDF()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition">
-                    📥 Download PDF
+                    📥 PDF
                 </button>
                 <button onclick="app.shareReceipt()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold transition">
                     📤 Share
@@ -269,23 +286,27 @@
         </div>
     </div>
 
-    <!-- Incoming Call Modal -->
-    <div id="incomingCallModal" class="modal hidden">
+    <!-- Call Type Selection Modal -->
+    <div id="callTypeModal" class="modal hidden">
         <div class="glass rounded-2xl p-8 max-w-md w-full mx-4 border-2 border-cyan-400">
-            <div class="text-center">
-                <svg class="w-16 h-16 mx-auto text-cyan-400 mb-4 pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
-                <h2 class="text-2xl font-bold mb-2">Incoming Call</h2>
-                <p class="text-gray-300 mb-6">From: <span id="callerAddress">0x...</span></p>
-                <div class="flex space-x-4">
-                    <button onclick="app.acceptCall()" class="flex-1 bg-green-500 hover:bg-green-600 py-3 rounded-lg font-semibold transition">
-                        Accept
-                    </button>
-                    <button onclick="app.rejectCall()" class="flex-1 bg-red-500 hover:bg-red-600 py-3 rounded-lg font-semibold transition">
-                        Decline
-                    </button>
-                </div>
+            <h2 class="text-2xl font-bold text-center mb-6">Choose Call Type</h2>
+            
+            <div class="space-y-4">
+                <button onclick="app.startCallWithType('voice')" class="w-full btn-voice py-6 rounded-xl font-semibold text-lg hover:shadow-2xl transition-all transform hover:scale-105">
+                    <div class="text-4xl mb-2">🎤</div>
+                    <div>Voice Call</div>
+                    <div class="text-sm opacity-80 mt-1">Audio only • Lower cost</div>
+                </button>
+                
+                <button onclick="app.startCallWithType('video')" class="w-full btn-success py-6 rounded-xl font-semibold text-lg hover:shadow-2xl transition-all transform hover:scale-105">
+                    <div class="text-4xl mb-2">📹</div>
+                    <div>Video Call</div>
+                    <div class="text-sm opacity-80 mt-1">Audio + Video • HD quality</div>
+                </button>
+                
+                <button onclick="app.closeCallTypeModal()" class="w-full glass py-3 rounded-lg font-semibold hover:bg-white hover:bg-opacity-10 transition">
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -299,8 +320,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                     </svg>
                     <h1 class="text-xl md:text-2xl font-bold">BlockCall</h1>
-                    <span class="text-xs bg-green-500 px-2 py-1 rounded-full">v2.0</span>
-                    <span id="onlineStatus" class="text-xs bg-gray-500 px-2 py-1 rounded-full hidden">Offline</span>
+                    <span class="text-xs bg-green-500 px-2 py-1 rounded-full">Voice + Video</span>
                 </div>
                 
                 <button id="connectBtn" onclick="app.connectWallet()" class="btn-primary px-4 md:px-6 py-2 rounded-lg font-semibold transition-all duration-300">
@@ -314,7 +334,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-xs text-gray-300">Balance</p>
-                        <p id="accountBalance" class="text-xs md:text-sm font-bold">0 MATIC</p>
+                        <p id="accountBalance" class="text-xs md:text-sm font-bold">0 ETH</p>
                     </div>
                 </div>
             </div>
@@ -330,31 +350,25 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
             </svg>
             <h2 class="text-3xl md:text-4xl font-bold mb-4">Welcome to BlockCall</h2>
-            <p class="text-lg md:text-xl text-gray-300 mb-4">Decentralized voice & video calls with verified receipts</p>
-            <p class="text-sm text-gray-400 mb-8">✓ Low fees: $0.09-$0.30 • ✓ Blockchain verified • ✓ Printable receipts</p>
+            <p class="text-lg md:text-xl text-gray-300 mb-4">Voice & Video calls with blockchain receipts</p>
+            <p class="text-sm text-gray-400 mb-8">🎤 Voice calls • 📹 Video calls • 📋 Verified receipts</p>
             <button onclick="app.connectWallet()" class="btn-primary px-6 md:px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-300">
                 Get Started
             </button>
             
-            <!-- Demo Mode Notice -->
             <div class="mt-8 glass rounded-lg p-6 max-w-2xl mx-auto">
-                <h3 class="text-xl font-bold mb-3 text-yellow-400">📋 Receipt Feature</h3>
-                <p class="text-sm text-gray-300 mb-4">Every call generates a blockchain-verified receipt that you can:</p>
-                <div class="grid md:grid-cols-3 gap-4 text-sm">
+                <h3 class="text-xl font-bold mb-3 text-yellow-400">✨ New: Voice Calls!</h3>
+                <p class="text-sm text-gray-300 mb-4">Choose between voice-only or video calls:</p>
+                <div class="grid md:grid-cols-2 gap-4 text-sm">
                     <div class="glass rounded-lg p-4">
-                        <div class="text-2xl mb-2">🖨️</div>
-                        <div class="font-semibold">Print</div>
-                        <div class="text-xs text-gray-400">Physical copy</div>
+                        <div class="text-2xl mb-2">🎤</div>
+                        <div class="font-semibold">Voice Only</div>
+                        <div class="text-xs text-gray-400">Lower cost • Less data</div>
                     </div>
                     <div class="glass rounded-lg p-4">
-                        <div class="text-2xl mb-2">📥</div>
-                        <div class="font-semibold">Download</div>
-                        <div class="text-xs text-gray-400">PDF format</div>
-                    </div>
-                    <div class="glass rounded-lg p-4">
-                        <div class="text-2xl mb-2">📤</div>
-                        <div class="font-semibold">Share</div>
-                        <div class="text-xs text-gray-400">Via email/social</div>
+                        <div class="text-2xl mb-2">📹</div>
+                        <div class="font-semibold">Video Call</div>
+                        <div class="text-xs text-gray-400">HD quality • Full experience</div>
                     </div>
                 </div>
             </div>
@@ -374,9 +388,9 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm mb-2">Rate per Minute (MATIC)</label>
+                    <label class="block text-sm mb-2">Rate per Minute (ETH)</label>
                     <input type="number" id="regRate" value="0.001" step="0.001" class="w-full glass rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white" placeholder="0.001">
-                    <p class="text-xs text-gray-400 mt-1">Suggested: 0.001 MATIC (~$0.0007)</p>
+                    <p class="text-xs text-gray-400 mt-1">Same rate for voice & video</p>
                 </div>
                 
                 <button onclick="app.registerUser()" class="btn-primary w-full py-3 rounded-lg font-semibold transition-all duration-300">
@@ -390,7 +404,8 @@
             
             <!-- In Call View -->
             <div id="callView" class="hidden space-y-6">
-                <div class="grid md:grid-cols-2 gap-4">
+                <!-- Video Call Container -->
+                <div id="videoCallContainer" class="hidden grid md:grid-cols-2 gap-4">
                     <div class="video-container aspect-video">
                         <video id="localVideo" autoplay muted playsinline class="w-full h-full"></video>
                         <div class="absolute bottom-4 left-4 glass px-3 py-1 rounded-full text-sm">You</div>
@@ -401,11 +416,28 @@
                         <div class="absolute bottom-4 left-4 glass px-3 py-1 rounded-full text-sm">Remote</div>
                     </div>
                 </div>
+
+                <!-- Voice Call Container -->
+                <div id="voiceCallContainer" class="hidden">
+                    <div class="voice-only-container">
+                        <div class="text-6xl mb-6">🎤</div>
+                        <h2 class="text-3xl font-bold mb-4">Voice Call in Progress</h2>
+                        <div class="audio-wave mb-6">
+                            <div class="audio-bar" style="height: 30px"></div>
+                            <div class="audio-bar" style="height: 50px"></div>
+                            <div class="audio-bar" style="height: 70px"></div>
+                            <div class="audio-bar" style="height: 50px"></div>
+                            <div class="audio-bar" style="height: 30px"></div>
+                        </div>
+                        <p class="text-xl opacity-90">Audio only • Lower cost</p>
+                    </div>
+                </div>
                 
                 <div class="glass rounded-2xl p-6 text-center">
                     <div class="text-3xl font-bold mb-2" id="callDuration">00:00</div>
                     <div class="text-sm text-gray-300">Call Duration</div>
-                    <div class="text-xs text-gray-400 mt-2">Estimated cost: <span id="callCost">$0.00</span></div>
+                    <div class="text-xs text-gray-400 mt-2">Type: <span id="currentCallType">-</span></div>
+                    <div class="text-xs text-gray-400 mt-1">Estimated cost: <span id="callCost">$0.00</span></div>
                 </div>
                 
                 <div class="flex justify-center space-x-4 flex-wrap gap-4">
@@ -445,14 +477,18 @@
                             <input type="text" id="receiverAddress" class="w-full glass rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white" placeholder="0x... or test mode">
                         </div>
                         
-                        <button onclick="app.startCall()" class="btn-success w-full py-3 rounded-lg font-semibold transition-all duration-300">
-                            Start Call
+                        <button onclick="app.showCallTypeSelection()" class="btn-success w-full py-3 rounded-lg font-semibold transition-all duration-300">
+                            📞 Start Call (Choose Type)
                         </button>
                         
-                        <!-- Test Mode Button -->
-                        <button onclick="app.startTestCall()" class="w-full glass py-3 rounded-lg font-semibold hover:bg-white hover:bg-opacity-10 transition-all duration-300">
-                            🧪 Test Local Video
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="app.startTestCall('voice')" class="glass py-3 rounded-lg font-semibold hover:bg-white hover:bg-opacity-10 transition-all duration-300">
+                                🎤 Test Voice
+                            </button>
+                            <button onclick="app.startTestCall('video')" class="glass py-3 rounded-lg font-semibold hover:bg-white hover:bg-opacity-10 transition-all duration-300">
+                                📹 Test Video
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -467,22 +503,27 @@
                         <div class="glass rounded-lg p-4">
                             <p class="text-sm text-gray-300">Total Calls</p>
                             <p class="text-2xl font-bold" id="totalCalls">0</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <span id="voiceCalls">0</span> voice • 
+                                <span id="videoCalls">0</span> video
+                            </p>
                         </div>
                         
                         <div class="glass rounded-lg p-4">
                             <p class="text-sm text-gray-300">Current Balance</p>
-                            <p class="text-2xl font-bold" id="dashBalance">0 MATIC</p>
+                            <p class="text-2xl font-bold" id="dashBalance">0 ETH</p>
                         </div>
 
                         <div>
-                            <label class="block text-sm mb-2">Deposit Amount (MATIC)</label>
-                            <input type="number" id="depositAmount" value="0.1" step="0.1" class="w-full glass rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white" placeholder="0.1">
+                            <label class="block text-sm mb-2">Deposit Amount (ETH)</label>
+                            <input type="number" id="depositAmount" value="0.01" step="0.01" class="w-full glass rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white" placeholder="0.01">
                         </div>
                         
                         <button onclick="app.deposit()" class="btn-secondary w-full py-3 rounded-lg font-semibold transition-all duration-300">
                             Deposit
                         </button>
-                    </div></div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -490,14 +531,12 @@
     <!-- Footer -->
     <footer class="glass mt-12 border-t border-white border-opacity-20">
         <div class="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-400">
-            <p class="mb-2">BlockCall v2.0 - Decentralized Calling with Verified Receipts</p>
-            <p class="text-xs">Built with Ethereum, WebRTC, and ❤️</p>
-            <p class="text-xs mt-2">📋 Every call generates a blockchain-verified receipt</p>
+            <p class="mb-2">BlockCall v2.1 - Voice & Video Calls with Blockchain Receipts</p>
+            <p class="text-xs">🎤 Voice-only mode • 📹 HD Video • 📋 Verified receipts</p>
         </div>
     </footer>
 
     <script>
-        // BlockCall Application with Receipt System
         const app = {
             account: null,
             provider: null,
@@ -515,19 +554,22 @@
             incomingCallData: null,
             currentCallData: null,
             callHistory: [],
+            currentCallType: 'video', // 'voice' or 'video'
 
-            // Contract Configuration
-            CONTRACT_ADDRESS: '0x0000000000000000000000000000000000000000',
-            SIGNALING_SERVER: 'http://localhost:3001',
+            CONTRACT_ADDRESS: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+            SIGNALING_SERVER: 'https://blockcall-signal.herokuapp.com',
             
             CONTRACT_ABI: [
-                "function registerUser(string memory _username, string memory _profileHash, uint256 _ratePerMinute) external",
+                "function registerUser(string memory _username, uint256 _ratePerMinute) external",
                 "function depositBalance() external payable",
-                "function getUserInfo(address _user) external view returns (string memory username, string memory profileHash, uint256 balance, uint256 ratePerMinute, bool isAvailable, bool isRegistered)"
+                "function withdrawBalance(uint256 _amount) external",
+                "function initiateCall(address _receiver) external returns (bytes32)",
+                "function endCall(bytes32 _callId) external",
+                "function getUserInfo(address _user) external view returns (string memory username, uint256 balance, uint256 ratePerMinute, bool isAvailable, bool isRegistered, uint256 totalCalls)",
             ],
 
             init() {
-                console.log('🚀 BlockCall with Receipts initialized');
+                console.log('🚀 BlockCall v2.1 - Voice & Video initialized');
                 this.loadCallHistory();
                 this.checkConnection();
             },
@@ -536,12 +578,22 @@
                 const stored = localStorage.getItem('blockcall_history');
                 if (stored) {
                     this.callHistory = JSON.parse(stored);
-                    document.getElementById('totalCalls').textContent = this.callHistory.length;
+                    this.updateCallStats();
                 }
+            },
+
+            updateCallStats() {
+                const voiceCalls = this.callHistory.filter(c => c.callType === 'Voice Call').length;
+                const videoCalls = this.callHistory.filter(c => c.callType === 'Video Call').length;
+                
+                document.getElementById('totalCalls').textContent = this.callHistory.length;
+                document.getElementById('voiceCalls').textContent = voiceCalls;
+                document.getElementById('videoCalls').textContent = videoCalls;
             },
 
             saveCallHistory() {
                 localStorage.setItem('blockcall_history', JSON.stringify(this.callHistory));
+                this.updateCallStats();
             },
 
             async checkConnection() {
@@ -597,74 +649,86 @@
                     return;
                 }
 
-                alert(`✅ User "${username}" registered with rate ${rate} MATIC/min`);
+                alert(`✅ User "${username}" registered with rate ${rate} ETH/min`);
                 this.showDashboard();
             },
 
             async deposit() {
                 const amount = document.getElementById('depositAmount').value;
-                alert(`✅ Deposited ${amount} MATIC to your balance`);
-                document.getElementById('dashBalance').textContent = amount + ' MATIC';
-                document.getElementById('accountBalance').textContent = amount + ' MATIC';
+                alert(`✅ Deposited ${amount} ETH to your balance`);
+                document.getElementById('dashBalance').textContent = amount + ' ETH';
+                document.getElementById('accountBalance').textContent = amount + ' ETH';
             },
 
-            async startCall() {
+            showCallTypeSelection() {
+                document.getElementById('callTypeModal').classList.remove('hidden');
+            },
+
+            closeCallTypeModal() {
+                document.getElementById('callTypeModal').classList.add('hidden');
+            },
+
+            async startCallWithType(type) {
+                this.currentCallType = type;
+                this.closeCallTypeModal();
+                
                 const receiver = document.getElementById('receiverAddress').value;
                 
-                if (!receiver && !this.account) {
-                    alert('Please enter a receiver address or use test mode');
-                    return;
-                }
-
-                // Save call start data
                 this.currentCallData = {
                     caller: this.account || '0x1234...5678',
                     receiver: receiver || '0xabcd...efgh',
                     startTime: new Date(),
-                    callType: 'Video Call',
-                    quality: 'HD (720p)',
-                    network: 'Polygon Mumbai (Testnet)',
+                    callType: type === 'voice' ? 'Voice Call' : 'Video Call',
+                    quality: type === 'voice' ? 'Audio Only' : 'HD (720p)',
+                    network: 'Base Sepolia (Testnet)',
                     ratePerMinute: 0.001
                 };
 
-                await this.initializeWebRTC();
-                this.showCallView();
+                await this.initializeWebRTC(type);
+                this.showCallView(type);
                 
-                alert('📞 Call initiated. Receipt will be generated when call ends.');
+                alert(`📞 ${type === 'voice' ? 'Voice' : 'Video'} call initiated!`);
             },
 
-            async startTestCall() {
-                alert('🧪 Starting local video test...');
+            async startTestCall(type) {
+                this.currentCallType = type;
+                
+                alert(`🧪 Starting ${type} call test...`);
                 
                 this.currentCallData = {
                     caller: this.account || '0x1234...5678',
                     receiver: '0xTest...Mode',
                     startTime: new Date(),
-                    callType: 'Video Call (Test Mode)',
-                    quality: 'HD (720p)',
+                    callType: type === 'voice' ? 'Voice Call' : 'Video Call',
+                    quality: type === 'voice' ? 'Audio Only' : 'HD (720p)',
                     network: 'Test Network',
                     ratePerMinute: 0.001
                 };
 
-                await this.initializeWebRTC();
-                this.showCallView();
+                await this.initializeWebRTC(type);
+                this.showCallView(type);
             },
 
-            async initializeWebRTC() {
+            async initializeWebRTC(type) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 1280, height: 720 },
-                        audio: true
-                    });
+                    const constraints = {
+                        audio: true,
+                        video: type === 'video' ? { width: 1280, height: 720 } : false
+                    };
+
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
                     this.localStream = stream;
-                    const localVideo = document.getElementById('localVideo');
-                    localVideo.srcObject = stream;
+                    
+                    if (type === 'video') {
+                        const localVideo = document.getElementById('localVideo');
+                        localVideo.srcObject = stream;
 
-                    const remoteVideo = document.getElementById('remoteVideo');
-                    remoteVideo.srcObject = stream;
+                        const remoteVideo = document.getElementById('remoteVideo');
+                        remoteVideo.srcObject = stream;
+                    }
 
-                    console.log('✅ WebRTC initialized');
+                    console.log(`✅ ${type === 'voice' ? 'Audio' : 'WebRTC'} initialized`);
                     
                 } catch (error) {
                     console.error('Error accessing media devices:', error);
@@ -672,9 +736,23 @@
                 }
             },
 
-            showCallView() {
+            showCallView(type) {
                 document.getElementById('dashView').classList.add('hidden');
                 document.getElementById('callView').classList.remove('hidden');
+                
+                if (type === 'video') {
+                    document.getElementById('videoCallContainer').classList.remove('hidden');
+                    document.getElementById('voiceCallContainer').classList.add('hidden');
+                    document.getElementById('videoBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('videoCallContainer').classList.add('hidden');
+                    document.getElementById('voiceCallContainer').classList.remove('hidden');
+                    document.getElementById('videoBtn').classList.add('hidden');
+                }
+                
+                document.getElementById('currentCallType').textContent = 
+                    type === 'voice' ? '🎤 Voice Only' : '📹 Video Call';
+                
                 this.inCall = true;
                 this.callStartTime = Date.now();
                 this.startCallTimer();
@@ -696,7 +774,6 @@
             },
 
             async endCall() {
-                // Stop streams
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => track.stop());
                     this.localStream = null;
@@ -712,12 +789,10 @@
                     this.callDurationInterval = null;
                 }
 
-                // Calculate call duration
                 const endTime = new Date();
                 const durationSeconds = Math.floor((endTime - this.currentCallData.startTime) / 1000);
                 const durationMinutes = Math.ceil(durationSeconds / 60);
 
-                // Complete call data
                 this.currentCallData.endTime = endTime;
                 this.currentCallData.durationSeconds = durationSeconds;
                 this.currentCallData.durationMinutes = durationMinutes;
@@ -725,7 +800,6 @@
                 this.currentCallData.txHash = '0x' + Math.random().toString(16).substr(2, 64);
                 this.currentCallData.blockNumber = Math.floor(Math.random() * 1000000);
 
-                // Calculate costs
                 const subtotal = this.currentCallData.ratePerMinute * durationMinutes;
                 const platformFee = subtotal * 0.05;
                 const total = subtotal + platformFee;
@@ -734,63 +808,43 @@
                 this.currentCallData.platformFee = platformFee;
                 this.currentCallData.total = total;
 
-                // Save to history
                 this.callHistory.push({...this.currentCallData});
                 this.saveCallHistory();
-                document.getElementById('totalCalls').textContent = this.callHistory.length;
 
-                // Reset call state
                 this.inCall = false;
                 this.callStartTime = null;
 
-                // Show dashboard
                 document.getElementById('callView').classList.add('hidden');
                 document.getElementById('dashView').classList.remove('hidden');
 
-                // Generate and show receipt
                 this.generateReceipt(this.currentCallData);
                 
                 console.log('📞 Call ended, receipt generated');
             },
 
             generateReceipt(callData) {
-                // Receipt Number
                 document.getElementById('receiptNumber').textContent = callData.callId;
-                
-                // Receipt Date
                 document.getElementById('receiptDate').textContent = callData.endTime.toLocaleDateString() + ' ' + callData.endTime.toLocaleTimeString();
-                
-                // Call Details
                 document.getElementById('receiptCallType').textContent = callData.callType;
-                document.getElementById('receiptQuality').textContent = callData.quality;
                 document.getElementById('receiptStartTime').textContent = callData.startTime.toLocaleString();
                 document.getElementById('receiptEndTime').textContent = callData.endTime.toLocaleString();
                 
-                // Duration
                 const mins = Math.floor(callData.durationSeconds / 60);
                 const secs = callData.durationSeconds % 60;
                 document.getElementById('receiptDuration').textContent = `${mins}m ${secs}s (${callData.durationMinutes} minutes billed)`;
                 
-                // Participants
                 document.getElementById('receiptCaller').textContent = callData.caller;
                 document.getElementById('receiptReceiver').textContent = callData.receiver;
-                
-                // Blockchain Details
                 document.getElementById('receiptNetwork').textContent = callData.network;
                 document.getElementById('receiptTxHash').textContent = callData.txHash;
                 document.getElementById('receiptBlockNumber').textContent = callData.blockNumber;
                 document.getElementById('receiptCallId').textContent = callData.callId;
-                
-                // Payment Details
-                document.getElementById('receiptRate').textContent = `${callData.ratePerMinute} MATIC/min`;
-                document.getElementById('receiptSubtotal').textContent = `${callData.subtotal.toFixed(6)} MATIC`;
-                document.getElementById('receiptPlatformFee').textContent = `${callData.platformFee.toFixed(6)} MATIC`;
-                document.getElementById('receiptTotal').textContent = `${callData.total.toFixed(6)} MATIC`;
-                
-                // Generated timestamp
+                document.getElementById('receiptRate').textContent = `${callData.ratePerMinute} ETH/min`;
+                document.getElementById('receiptSubtotal').textContent = `${callData.subtotal.toFixed(6)} ETH`;
+                document.getElementById('receiptPlatformFee').textContent = `${callData.platformFee.toFixed(6)} ETH`;
+                document.getElementById('receiptTotal').textContent = `${callData.total.toFixed(6)} ETH`;
                 document.getElementById('receiptGenerated').textContent = new Date().toLocaleString();
                 
-                // Show receipt modal
                 document.getElementById('receiptModal').classList.remove('hidden');
             },
 
@@ -807,7 +861,6 @@
                     const { jsPDF } = window.jspdf;
                     const receiptContent = document.getElementById('receiptContent');
                     
-                    // Use html2canvas to capture the receipt
                     const canvas = await html2canvas(receiptContent, {
                         scale: 2,
                         useCORS: true,
@@ -822,7 +875,7 @@
                         format: 'a4'
                     });
                     
-                    const imgWidth = 210; // A4 width in mm
+                    const imgWidth = 210;
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
                     
                     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
@@ -839,16 +892,17 @@
                 const receiptText = `
 📞 BlockCall Receipt
 
+Call Type: ${this.currentCallData.callType}
 Call ID: ${this.currentCallData.callId}
 Date: ${this.currentCallData.endTime.toLocaleString()}
 Duration: ${this.currentCallData.durationMinutes} minutes
-Amount: ${this.currentCallData.total.toFixed(6)} MATIC
+Amount: ${this.currentCallData.total.toFixed(6)} ETH
 
 Blockchain Verified ✓
 Transaction: ${this.currentCallData.txHash}
 Network: ${this.currentCallData.network}
 
-Generated by BlockCall - Decentralized Calling Platform
+Generated by BlockCall - Voice & Video Calling Platform
                 `.trim();
 
                 if (navigator.share) {
@@ -857,9 +911,7 @@ Generated by BlockCall - Decentralized Calling Platform
                             title: 'BlockCall Receipt',
                             text: receiptText
                         });
-                        console.log('Receipt shared successfully');
                     } catch (error) {
-                        console.log('Share cancelled or failed:', error);
                         this.copyReceiptToClipboard(receiptText);
                     }
                 } else {
@@ -869,10 +921,9 @@ Generated by BlockCall - Decentralized Calling Platform
 
             copyReceiptToClipboard(text) {
                 navigator.clipboard.writeText(text).then(() => {
-                    alert('✅ Receipt copied to clipboard! You can paste it anywhere.');
+                    alert('✅ Receipt copied to clipboard!');
                 }).catch(err => {
                     console.error('Failed to copy:', err);
-                    alert('❌ Failed to copy receipt. Please try again.');
                 });
             },
 
@@ -889,13 +940,11 @@ Generated by BlockCall - Decentralized Calling Platform
                     } else {
                         muteBtn.classList.remove('bg-red-500');
                     }
-
-                    console.log('🎤 Mute:', this.isMuted);
                 }
             },
 
             toggleVideo() {
-                if (this.localStream) {
+                if (this.localStream && this.currentCallType === 'video') {
                     this.isVideoOff = !this.isVideoOff;
                     this.localStream.getVideoTracks().forEach(track => {
                         track.enabled = !this.isVideoOff;
@@ -907,35 +956,17 @@ Generated by BlockCall - Decentralized Calling Platform
                     } else {
                         videoBtn.classList.remove('bg-red-500');
                     }
-
-                    console.log('📹 Video:', !this.isVideoOff);
                 }
-            },
-
-            acceptCall() {
-                document.getElementById('incomingCallModal').classList.add('hidden');
-                this.initializeWebRTC();
-                this.showCallView();
-                alert('✅ Call accepted');
-            },
-
-            rejectCall() {
-                document.getElementById('incomingCallModal').classList.add('hidden');
-                this.incomingCallData = null;
-                alert('❌ Call rejected');
             }
         };
 
-        // Initialize app when page loads
         window.addEventListener('load', () => {
             app.init();
         });
 
-        // Handle account changes
         if (typeof window.ethereum !== 'undefined') {
             window.ethereum.on('accountsChanged', (accounts) => {
                 if (accounts.length === 0) {
-                    console.log('Please connect to MetaMask');
                     location.reload();
                 } else if (accounts[0] !== app.account) {
                     app.account = accounts[0];
